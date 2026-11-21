@@ -42,7 +42,7 @@ def  get_url(db:Session = Depends(get_db)):
         for url in urls
     ]
 
-@router.get("/search/{short_code}")
+@router.get("/{short_code}")
 def search_url(short_code:str , db:Session = Depends(get_db)):
     
     url = db.query(URL).filter(
