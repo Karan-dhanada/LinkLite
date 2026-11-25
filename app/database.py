@@ -1,30 +1,43 @@
-import os
 
+import os
 from dotenv import load_dotenv
-from sqlalchemy import create_engine , URL
-from sqlalchemy.orm import sessionmaker , declarative_base
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, declarative_base
 
 load_dotenv()
 
-DATABASE_URL = URL.create(
-    drivername = "postgresql+psycopg",
-    username = os.getenv("DB_USER"),
-    password = os.getenv("DB_PASSWORD"),
-    host = os.getenv("DB_HOST"),
-    port = os.getenv("DB_PORT"),
-    database = os.getenv("DB_NAME")    
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+if DATABASE_URL:
+    # Use Neon when DATABASE_URL is provided
+    if DATABASE_URL.startswith("postgresql://"):
+        DATABASE_URL = DATABASE_URL.replace(
+            "postgresql://",
+            "postgresql+psycopg://",
+            1
+        )
+else:
+    # Otherwise, use local PostgreSQL
+    DATABASE_URL = (
+        f"postgresql+psycopg://"
+        f"{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}"
+        f"@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT', '5432')}"
+        f"/{os.getenv('DB_NAME')}"
+    )
+
+engine = create_engine(
+    DATABASE_URL,
+    pool_pre_ping=True
 )
 
-engine = create_engine(DATABASE_URL)
-
-
 SessionLocal = sessionmaker(
-    autocommit = False,
-    autoflush = False,
-    bind = engine
+    autocommit=False,
+    autoflush=False,
+    bind=engine
 )
 
 Base = declarative_base()
+
 
 def get_db():
     db = SessionLocal()
@@ -32,4 +45,3 @@ def get_db():
         yield db
     finally:
         db.close()
-        
